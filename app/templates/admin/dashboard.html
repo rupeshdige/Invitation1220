@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Invitations · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Your invitations</h1><p class="muted">Create a card, add guests, share personal links and watch the replies arrive.</p></div>
+  <a class="btn primary" href="{{ url_for('admin.event_new') }}">+ New invitation</a>
+</div>
+{% if not cards %}
+  <div class="empty">
+    <div class="empty-mark">✉</div>
+    <h2>No invitations yet</h2>
+    <p class="muted">Start with your first card — pick colours, upload your images and add your functions.</p>
+    <a class="btn primary" href="{{ url_for('admin.event_new') }}">Create your first invitation</a>
+  </div>
+{% else %}
+<div class="grid cards">
+  {% for ev, s in cards %}
+  <article class="card event-card" style="--ev-accent: {{ ev.accent_color }}; --ev-bg: {{ ev.bg_color }}; --ev-text: {{ ev.text_color }}">
+    <div class="swatch"><span>{{ ev.monogram }}</span></div>
+    <div class="event-card-body">
+      <h3>{{ ev.title }}</h3>
+      <p class="muted small">{{ ev.display_names }}{% if ev.date_text %} · {{ ev.date_text }}{% endif %}</p>
+      <div class="mini-stats">
+        <div><b>{{ s.total }}</b><span>invited</span></div>
+        <div><b>{{ s.opened }}</b><span>opened</span></div>
+        <div><b>{{ s.responded }}</b><span>replied</span></div>
+        <div><b>{{ s.expected }}</b><span>coming</span></div>
+      </div>
+      <div class="bar"><i style="width: {{ s.response_pct }}%"></i></div>
+      <div class="row gap">
+        <a class="btn small primary" href="{{ url_for('admin.event_overview', event_id=ev.id) }}">Open tracker</a>
+        <a class="btn small ghost" href="{{ url_for('admin.event_edit', event_id=ev.id) }}">Edit design</a>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

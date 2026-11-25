@@ -1,0 +1,47 @@
+{% extends "admin/event_base.html" %}
+{% block title %}Functions · {{ ev.title }}{% endblock %}
+{% block event_content %}
+<div class="grid two-col">
+  <section class="panel">
+    <h2>{{ 'Edit function' if editing else 'Add a function' }}</h2>
+    <p class="muted small">Each function (Nikah, Mehndi, Reception…) gets its own attendance selector on the invitation.</p>
+    <form method="post" class="stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="function_id" value="{{ editing.id if editing else '' }}">
+      <label>Name<input name="name" value="{{ editing.name if editing else '' }}" required placeholder="Nikah"></label>
+      <div class="grid two">
+        <label>Starts<input type="datetime-local" name="starts_at" value="{{ editing.starts_at.strftime('%Y-%m-%dT%H:%M') if editing and editing.starts_at else '' }}"></label>
+        <label>Ends <span class="muted small">(optional)</span><input type="datetime-local" name="ends_at" value="{{ editing.ends_at.strftime('%Y-%m-%dT%H:%M') if editing and editing.ends_at else '' }}"></label>
+      </div>
+      <label>Location / venue name<input name="venue" value="{{ editing.venue if editing else '' }}" placeholder="Burhani Hall (location name)"></label>
+      <label>Full address<input name="address" value="{{ editing.address if editing else '' }}"></label>
+      <label>Google Maps link<input name="map_url" value="{{ editing.map_url if editing else '' }}" placeholder="https://maps.app.goo.gl/…"></label>
+      <div class="grid two">
+        <label>Dress code<input name="dress_code" value="{{ editing.dress_code if editing else '' }}"></label>
+        <label>Order<input type="number" name="sort_order" value="{{ editing.sort_order if editing else ev.functions|length + 1 }}"></label>
+      </div>
+      <label>Note<input name="notes" value="{{ editing.notes if editing else '' }}" placeholder="Dinner to follow"></label>
+      <div class="row gap"><button class="btn primary" type="submit">{{ 'Save function' if editing else 'Add function' }}</button>
+        {% if editing %}<a class="btn ghost" href="{{ url_for('admin.event_functions', event_id=ev.id) }}">Cancel</a>{% endif %}</div>
+    </form>
+  </section>
+  <section class="panel">
+    <h2>Schedule</h2>
+    {% if not ev.functions %}<p class="muted">No functions yet. If you add none, guests simply reply attending / not attending.</p>{% endif %}
+    <ul class="list">
+      {% for fn in ev.functions %}
+      <li>
+        <div><b>{{ fn.name }}</b>
+          <div class="muted small">{% if fn.starts_at %}{{ fn.starts_at | dt('%a, %d %b %Y') }} · {{ fn.starts_at | tm }}{% else %}Date to be added{% endif %}</div>
+          <div class="muted small">{{ fn.venue }}</div></div>
+        <div class="row gap">
+          <a class="btn small ghost" href="{{ url_for('admin.event_functions', event_id=ev.id, edit=fn.id) }}">Edit</a>
+          <form method="post" action="{{ url_for('admin.function_delete', event_id=ev.id, fid=fn.id) }}" data-confirm="Remove {{ fn.name }}? Its RSVPs are removed too.">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small danger" type="submit">✕</button></form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

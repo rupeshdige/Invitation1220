@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Account · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><a class="crumb" href="{{ url_for('admin.dashboard') }}">← All invitations</a><h1>Your account</h1></div></div>
+<section class="panel narrow">
+  <form method="post" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Name<input name="name" value="{{ current_user.name }}" required></label>
+    <label>Email<input value="{{ current_user.email }}" disabled></label>
+    <hr>
+    <h3>Change password</h3>
+    <label>Current password<input type="password" name="current_password" autocomplete="current-password"></label>
+    <label>New password<input type="password" name="new_password" minlength="8" autocomplete="new-password"></label>
+    <button class="btn primary" type="submit">Save</button>
+  </form>
+</section>
+{% endblock %}

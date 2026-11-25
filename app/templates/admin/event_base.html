@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="event-head">
+  <div>
+    <a class="crumb" href="{{ url_for('admin.dashboard') }}">← All invitations</a>
+    <h1>{{ ev.title or 'New invitation' }}</h1>
+    <p class="muted">{{ ev.display_names }}{% if ev.date_text %} · {{ ev.date_text }}{% endif %}</p>
+  </div>
+  <a class="btn ghost" href="{{ url_for('admin.event_preview', event_id=ev.id) }}" target="_blank">Preview card ↗</a>
+</div>
+<nav class="tabs">
+  {% set tabs = [('admin.event_overview','Tracker'),('admin.event_guests','Guests'),('admin.event_functions','Functions'),('admin.event_edit','Design & content'),('admin.event_gallery','Gallery')] %}
+  {% for ep, label in tabs %}
+    <a href="{{ url_for(ep, event_id=ev.id) }}" class="{{ 'active' if request.endpoint == ep else '' }}">{{ label }}</a>
+  {% endfor %}
+</nav>
+{% block event_content %}{% endblock %}
+{% endblock %}

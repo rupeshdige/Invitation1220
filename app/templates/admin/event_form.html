@@ -1,0 +1,141 @@
+{% extends "base.html" if is_new else "admin/event_base.html" %}
+{% block title %}{{ 'New invitation' if is_new else 'Design & content' }} · {{ app_name }}{% endblock %}
+{% set body_block = true %}
+
+{% macro form_body() %}
+<form method="post" enctype="multipart/form-data" class="event-form" id="event-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <section class="panel">
+    <h2>1 · Names &amp; titles</h2>
+    <div class="grid two">
+      <label>Internal title <span class="muted small">(only you see this)</span>
+        <input name="title" value="{{ ev.title }}" placeholder="e.g. Wedding Invitation 2026" required></label>
+      <label>Date line on the card
+        <input name="date_text" value="{{ ev.date_text }}" placeholder="November · December 2026"></label>
+      <label>First name
+        <input name="name_one" value="{{ ev.name_one }}" placeholder="Zainab"></label>
+      <label>Second name <span class="muted small">(optional)</span>
+        <input name="name_two" value="{{ ev.name_two }}" placeholder="Huzefa"></label>
+      <label class="span2">Line under the names
+        <input name="subtitle" value="{{ ev.subtitle }}" placeholder="Son of Mr. &amp; Mrs. …  /  Daughter of …"></label>
+      <label>Text above the names <span class="muted small">(if no header image)</span>
+        <input name="header_text" value="{{ ev.header_text }}" placeholder="Bismillah ir-Rahman ir-Raheem"></label>
+      <label class="span2 group-label">Location on the card <span class="muted small">(shown under the date, with Google / Apple Maps directions)</span></label>
+      <label>Location / venue name
+        <input name="venue" value="{{ ev.venue or '' }}" placeholder="Burhani Hall"></label>
+      <label>Full address
+        <input name="venue_address" value="{{ ev.venue_address or '' }}" placeholder="Dongri, Mumbai 400009"></label>
+      <label class="span2">Google Maps link <span class="muted small">(optional, pinned location)</span>
+        <input name="venue_map_url" value="{{ ev.venue_map_url or '' }}" placeholder="https://maps.app.goo.gl/…"></label>
+      <label>Seal / monogram letters
+        <input name="seal_text" value="{{ ev.seal_text }}" maxlength="4" placeholder="ZH"></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>2 · Message</h2>
+    <div class="grid two">
+      <label>Opening line
+        <input name="intro_line" value="{{ ev.intro_line }}"></label>
+      <label>Hosts <span class="muted small">(who is inviting)</span>
+        <input name="hosts" value="{{ ev.hosts }}" placeholder="Farida &amp; Murtaza Kapadia"></label>
+      <label class="span2">Invitation message <span class="muted small">(leave a blank line between paragraphs)</span>
+        <textarea name="message" rows="6" placeholder="Together with our families, we joyfully invite you…">{{ ev.message }}</textarea></label>
+      <label class="span2">Note above the RSVP form
+        <textarea name="rsvp_note" rows="3" placeholder="To help us serve you better, kindly confirm your presence…">{{ ev.rsvp_note }}</textarea></label>
+      <label>Reply-by date
+        <input type="date" name="rsvp_deadline" value="{{ ev.rsvp_deadline.isoformat() if ev.rsvp_deadline else '' }}"></label>
+      <label>Closing line
+        <input name="closing_line" value="{{ ev.closing_line }}"></label>
+      <label class="span2">“Thank you” message after RSVP
+        <input name="thanks_text" value="{{ ev.thanks_text }}"></label>
+      <label class="check span2"><input type="checkbox" name="rsvp_open" value="1" {{ 'checked' if ev.rsvp_open or is_new else '' }}> Accept replies (untick to lock all RSVPs)</label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>3 · Your images</h2>
+    <p class="muted small">JPG, PNG or WebP. Images are resized automatically and stored in your database.</p>
+    <div class="grid three">
+      {% for kind, label, hint, mid in [('header','Header image','Calligraphy / bismillah / logo shown above the names (transparent PNG works best)', ev.header_media_id),('hero','Hero image','Couple photo or monogram inside the arch frame', ev.hero_media_id),('bg','Page background','Soft texture or pattern behind the card', ev.bg_media_id)] %}
+      <div class="upload">
+        <div class="thumb">{% if mid %}<img src="{{ url_for('public.media', media_id=mid) }}" alt="">{% else %}<span class="muted small">No image</span>{% endif %}</div>
+        <strong>{{ label }}</strong>
+        <span class="muted small">{{ hint }}</span>
+        <input type="file" name="{{ kind }}" accept="image/*" data-compress>
+        {% if mid %}<label class="check small"><input type="checkbox" name="remove_{{ kind }}" value="1"> Remove current</label>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>4 · Colours &amp; fonts</h2>
+    <div class="presets">
+      {% for key, t in themes.items() %}
+      <button type="button" class="preset" data-theme='{{ t | tojson | forceescape }}' title="{{ t.label }}"
+              style="background: {{ t.bg_color }}; color: {{ t.text_color }}; border-color: {{ t.accent_color }}">
+        <i style="background: {{ t.accent_color }}"></i>{{ t.label }}</button>
+      {% endfor %}
+    </div>
+    <div class="grid five colors">
+      {% for k, label in [('bg_color','Page'),('paper_color','Card'),('text_color','Text'),('accent_color','Accent'),('envelope_color','Envelope')] %}
+      <label>{{ label }}<input type="color" name="{{ k }}" value="{{ ev[k] }}"></label>
+      {% endfor %}
+    </div>
+    <div class="grid three">
+      <label>Heading font
+        <select name="font_heading">{% for f in heading_fonts %}<option {{ 'selected' if ev.font_heading == f }}>{{ f }}</option>{% endfor %}</select></label>
+      <label>Script (names) font
+        <select name="font_script">{% for f in script_fonts %}<option {{ 'selected' if ev.font_script == f }}>{{ f }}</option>{% endfor %}</select></label>
+      <label>Body font
+        <select name="font_body">{% for f in body_fonts %}<option {{ 'selected' if ev.font_body == f }}>{{ f }}</option>{% endfor %}</select></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>5 · Sharing messages</h2>
+    <p class="muted small">Used by the WhatsApp buttons. Placeholders: <code>{name}</code> <code>{link}</code> <code>{hosts}</code> <code>{title}</code></p>
+    <div class="grid two">
+      <label>Country code for 10-digit numbers
+        <input name="country_code" value="{{ ev.country_code }}" maxlength="5" placeholder="91"></label>
+      <span></span>
+      <label>First invite message<textarea name="share_message" rows="5">{{ ev.share_message }}</textarea></label>
+      <label>Reminder message<textarea name="reminder_message" rows="5">{{ ev.reminder_message }}</textarea></label>
+    </div>
+  </section>
+
+  <div class="sticky-actions">
+    <button class="btn primary" type="submit">{{ 'Create invitation' if is_new else 'Save changes' }}</button>
+    {% if not is_new %}<a class="btn ghost" href="{{ url_for('admin.event_preview', event_id=ev.id) }}" target="_blank">Preview ↗</a>{% endif %}
+  </div>
+</form>
+
+{% if not is_new %}
+<section class="panel danger-zone">
+  <h2>More</h2>
+  <div class="row gap wrap">
+    <form method="post" action="{{ url_for('admin.event_duplicate', event_id=ev.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn ghost" type="submit">Duplicate this design</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.event_delete', event_id=ev.id) }}" class="row gap" data-confirm="Delete this invitation, all its guests and replies permanently?">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input name="confirm" placeholder="Type DELETE" style="max-width:150px">
+      <button class="btn danger" type="submit">Delete invitation</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+{% endmacro %}
+
+{% if is_new %}
+{% block content %}
+<div class="page-head"><div><a class="crumb" href="{{ url_for('admin.dashboard') }}">← All invitations</a><h1>New invitation</h1>
+<p class="muted">Fill what you need now — everything can be changed later.</p></div></div>
+{{ form_body() }}
+{% endblock %}
+{% else %}
+{% block event_content %}{{ form_body() }}{% endblock %}
+{% endif %}

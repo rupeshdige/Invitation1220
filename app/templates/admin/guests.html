@@ -1,0 +1,71 @@
+{% extends "admin/event_base.html" %}
+{% block title %}Guests · {{ ev.title }}{% endblock %}
+{% block event_content %}
+<section class="panel">
+  <h2>Add guests</h2>
+  <form method="post" action="{{ url_for('admin.guest_add', event_id=ev.id) }}" class="row gap wrap add-guest">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input name="name" placeholder="Guest / family name" required style="flex:2;min-width:180px">
+    <input name="phone" placeholder="WhatsApp number" style="flex:1;min-width:140px">
+    <input name="group_name" placeholder="Group (e.g. Bride side)" style="flex:1;min-width:140px">
+    <label class="inline-lbl">Persons invited<input name="max_guests" type="number" min="1" max="20" value="2" title="How many people you are inviting (shown on their card)"></label>
+    <button class="btn primary" type="submit">Add</button>
+  </form>
+  <details class="bulk">
+    <summary>Bulk import (paste or upload CSV)</summary>
+    <form method="post" action="{{ url_for('admin.guest_import', event_id=ev.id) }}" enctype="multipart/form-data" class="stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <p class="muted small">One guest per line: <code>Name, Phone, Group, Seats</code> (phone, group and seats optional).</p>
+      <textarea name="bulk" rows="5" placeholder="Murtaza Kagalwala, 9876543210, Groom side, 4&#10;Aliya Bohra, 9123456780, Friends, 2"></textarea>
+      <div class="row gap"><input type="file" name="csv_file" accept=".csv,.txt"><button class="btn" type="submit">Import</button></div>
+    </form>
+  </details>
+</section>
+
+<section class="panel">
+  <form method="get" class="row gap wrap filters">
+    <input name="q" value="{{ q }}" placeholder="Search name, phone or group…" style="flex:2;min-width:200px">
+    <select name="status">{% for k, label in filters.items() %}<option value="{{ k }}" {{ 'selected' if status == k }}>{{ label }}</option>{% endfor %}</select>
+    {% if groups %}<select name="group"><option value="">All groups</option>{% for gr in groups %}<option {{ 'selected' if group == gr }}>{{ gr }}</option>{% endfor %}</select>{% endif %}
+    <button class="btn" type="submit">Filter</button>
+    <a class="btn ghost" href="{{ url_for('admin.guests_export', event_id=ev.id, status=status, q=q, group=group) }}">Export CSV</a>
+  </form>
+  <p class="muted small">Showing {{ guests|length }} of {{ total }} guests</p>
+
+  <div class="table-wrap">
+  <table class="guest-table">
+    <thead><tr><th>Guest</th><th>Status</th><th>Tracking</th><th>Share</th><th></th></tr></thead>
+    <tbody>
+    {% for g in guests %}
+      <tr>
+        <td><b>{{ g.name }}</b>
+          <div class="muted small">{{ g.group_name or '—' }} · up to {{ g.max_guests }}{% if g.phone %} · {{ g.phone }}{% endif %}</div>
+          {% if g.note %}<div class="note">“{{ g.note }}”</div>{% endif %}</td>
+        <td>
+          {% if g.response == 'attending' %}<span class="pill good">Attending · {{ g.party_size }}</span>
+          {% elif g.response == 'declined' %}<span class="pill bad">Declined</span>
+          {% else %}<span class="pill">Awaiting</span>{% endif %}
+          {% if g.responded_at %}<div class="muted small">{{ g.responded_at | localtime('%d %b, %I:%M %p') }}</div>{% endif %}
+        </td>
+        <td class="small">
+          {% if g.sent_at %}<span class="pill soft">Sent</span>{% else %}<span class="pill warn">Not sent</span>{% endif %}
+          {% if g.open_count %}<span class="pill soft">Opened ×{{ g.open_count }}</span>{% endif %}
+          {% if g.last_opened_at %}<div class="muted small">Last: {{ g.last_opened_at | ago }}</div>{% endif %}
+        </td>
+        <td class="share">
+          <a class="btn small wa" target="_blank" rel="noopener" data-mark="{{ url_for('admin.guest_mark_sent', event_id=ev.id, gid=g.id) }}"
+             href="{{ whatsapp_link(g, ev, reminder=(g.sent_at is not none)) }}">{{ 'Remind' if g.sent_at else 'WhatsApp' }}</a>
+          <button class="btn small ghost" type="button" data-copy="{{ guest_link(g) }}">Copy link</button>
+        </td>
+        <td class="actions">
+          <a class="btn small ghost" href="{{ url_for('admin.guest_edit', event_id=ev.id, gid=g.id) }}">Edit</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="muted center pad">No guests match. Add your first guest above.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

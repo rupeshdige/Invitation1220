@@ -1,0 +1,25 @@
+{% extends "admin/event_base.html" %}
+{% block title %}Gallery · {{ ev.title }}{% endblock %}
+{% block event_content %}
+<section class="panel">
+  <h2>Photo gallery</h2>
+  <p class="muted small">Photos appear as a swipeable gallery on the invitation. Add as many as you like.</p>
+  <form method="post" enctype="multipart/form-data" class="row gap wrap" data-seq-upload>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="file" name="photos" accept="image/*" multiple required data-compress>
+    <button class="btn primary" type="submit">Upload</button>
+  </form>
+</section>
+<section class="panel">
+  {% if not photos %}<p class="muted">No photos yet.</p>{% endif %}
+  <div class="gallery-grid">
+    {% for p in photos %}
+    <figure>
+      <img src="{{ url_for('public.media', media_id=p.id) }}" loading="lazy" alt="">
+      <form method="post" action="{{ url_for('admin.gallery_delete', event_id=ev.id, media_id=p.id) }}" data-confirm="Remove this photo?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small danger" type="submit">Remove</button></form>
+    </figure>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "admin/event_base.html" %}
+{% block title %}Tracker · {{ ev.title }}{% endblock %}
+{% block event_content %}
+<div class="grid stats">
+  <div class="stat"><span>Invited</span><b>{{ stats.total }}</b><small>{{ stats.seats }} seats allowed</small></div>
+  <div class="stat"><span>Sent</span><b>{{ stats.sent }}</b><small>{{ stats.not_sent }} not sent yet</small></div>
+  <div class="stat"><span>Opened</span><b>{{ stats.opened }}</b><small>{{ stats.open_pct }}% of guests</small></div>
+  <div class="stat"><span>Replied</span><b>{{ stats.responded }}</b><small>{{ stats.pending }} awaiting</small></div>
+  <div class="stat good"><span>Attending</span><b>{{ stats.attending }}</b><small>{{ stats.expected }} people expected</small></div>
+  <div class="stat bad"><span>Declined</span><b>{{ stats.declined }}</b><small>families</small></div>
+</div>
+
+<section class="panel">
+  <div class="row between"><h2>Response progress</h2><span class="muted small">{{ stats.response_pct }}%{% if ev.rsvp_deadline %} · reply by {{ ev.rsvp_deadline | dt('%d %b %Y') }}{% endif %}</span></div>
+  <div class="funnel">
+    {% set t = stats.total or 1 %}
+    <div><label>Sent<span>{{ stats.sent }}</span></label><div class="bar"><i style="width: {{ 100*stats.sent/t }}%"></i></div></div>
+    <div><label>Opened<span>{{ stats.opened }}</span></label><div class="bar"><i style="width: {{ 100*stats.opened/t }}%"></i></div></div>
+    <div><label>Replied<span>{{ stats.responded }}</span></label><div class="bar"><i style="width: {{ 100*stats.responded/t }}%"></i></div></div>
+    <div><label>Attending<span>{{ stats.attending }}</span></label><div class="bar good"><i style="width: {{ 100*stats.attending/t }}%"></i></div></div>
+  </div>
+</section>
+
+{% if stats.per_function %}
+<section class="panel">
+  <h2>Headcount by function</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Function</th><th>When</th><th>Families</th><th>People</th></tr></thead>
+    <tbody>
+    {% for row in stats.per_function %}
+      <tr><td><b>{{ row.fn.name }}</b></td>
+          <td class="muted">{% if row.fn.starts_at %}{{ row.fn.starts_at | dt('%a %d %b') }}, {{ row.fn.starts_at | tm }}{% else %}—{% endif %}</td>
+          <td>{{ row.parties }}</td><td><b>{{ row.headcount }}</b></td></tr>
+    {% endfor %}
+    </tbody></table></div>
+</section>
+{% endif %}
+
+<div class="grid two-col">
+  <section class="panel">
+    <div class="row between"><h2>Needs a nudge</h2><a class="small" href="{{ url_for('admin.event_guests', event_id=ev.id, status='pending') }}">View all pending →</a></div>
+    {% if not follow_up %}<p class="muted">Everyone has replied. 🎉</p>{% endif %}
+    <ul class="list">
+      {% for g in follow_up %}
+      <li>
+        <div><b>{{ g.name }}</b>
+          <div class="muted small">{% if g.open_count %}Opened {{ g.last_opened_at | ago }}{% elif g.sent_at %}Sent {{ g.sent_at | ago }}, not opened{% else %}Not sent yet{% endif %}</div></div>
+        <a class="btn small ghost wa" target="_blank" rel="noopener" data-mark="{{ url_for('admin.guest_mark_sent', event_id=ev.id, gid=g.id) }}"
+           href="{{ whatsapp_link(g, ev, reminder=(g.sent_at is not none)) }}">{{ 'Remind' if g.sent_at else 'Send' }} ↗</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  <section class="panel">
+    <h2>Live activity</h2>
+    {% if not activity %}<p class="muted">Opens and replies will appear here.</p>{% endif %}
+    <ul class="list activity">
+      {% for a in activity %}
+      <li><span class="dot {{ a.kind }}"></span>
+        <div><b>{{ a.guest_name }}</b> <span class="muted">{{ a.detail }}</span>
+        <div class="muted small">{{ a.created_at | localtime }}</div></div></li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% if wishes %}
+<section class="panel">
+  <h2>Wishes &amp; messages <span class="muted small">({{ wishes|length }})</span></h2>
+  <div class="wish-list">
+    {% for g in wishes %}<blockquote><p>“{{ g.note }}”</p><footer>— {{ g.name }} <span class="muted small">· {{ g.responded_at | localtime('%d %b') }}</span></footer></blockquote>{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

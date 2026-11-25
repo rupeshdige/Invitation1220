@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}System check · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><a class="crumb" href="{{ url_for('admin.dashboard') }}">← All invitations</a><h1>System check</h1>
+<p class="muted">Confirms where your data is being stored.</p></div></div>
+<section class="panel narrow">
+  <h2>Database {% if info.ok %}<span class="pill good">Connected</span>{% else %}<span class="pill bad">Error</span>{% endif %}</h2>
+  <table>
+    <tr><td>Type</td><td><b>{{ 'PostgreSQL' if info.dialect == 'postgresql' else info.dialect|capitalize }}</b>{% if info.dialect != 'postgresql' %} <span class="pill warn">not Neon - local file only</span>{% endif %}</td></tr>
+    <tr><td>Host</td><td>{{ info.host }}</td></tr>
+    <tr><td>Database</td><td>{{ info.database }}</td></tr>
+    <tr><td>Server</td><td class="small">{{ info.server }}</td></tr>
+    <tr><td>BASE_URL</td><td>{{ base_url }}</td></tr>
+  </table>
+  {% if counts %}<h3 style="margin-top:18px">Stored right now</h3>
+  <table>{% for k, v in counts.items() %}<tr><td>{{ k }}</td><td><b>{{ v }}</b></td></tr>{% endfor %}</table>{% endif %}
+</section>
+{% endblock %}

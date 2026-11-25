@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="{{ ev.bg_color }}">
+  <meta property="og:title" content="{{ ev.display_names }} · You're invited">
+  <meta property="og:description" content="Open your personal invitation and kindly confirm your presence.">
+  {% if ev.hero_media_id %}<meta property="og:image" content="{{ url_for('public.media', media_id=ev.hero_media_id, _external=True) }}">{% endif %}
+  <title>{{ ev.display_names }} · Invitation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  {% if ev.hero_media_id %}<link rel="preload" as="image" href="{{ url_for('public.media', media_id=ev.hero_media_id) }}">{% endif %}
+  {% if ev.header_media_id %}<link rel="preload" as="image" href="{{ url_for('public.media', media_id=ev.header_media_id) }}">{% endif %}
+  <link rel="stylesheet" href="{{ gfonts(ev) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/invite.css') }}">
+  <style>
+    :root{
+      --bg: {{ ev.bg_color }}; --paper: {{ ev.paper_color }}; --text: {{ ev.text_color }};
+      --accent: {{ ev.accent_color }}; --env: {{ ev.envelope_color }};
+      --f-head: "{{ ev.font_heading }}", Georgia, serif; --f-script: "{{ ev.font_script }}", cursive; --f-body: "{{ ev.font_body }}", system-ui, sans-serif;
+    }
+    {% if ev.bg_media_id %}body::before{content:"";position:fixed;inset:0;z-index:-1;background:url('{{ url_for("public.media", media_id=ev.bg_media_id) }}') center/cover no-repeat;transform:translateZ(0)}{% endif %}
+  </style>
+</head>
+<body data-slug="{{ guest.slug }}" data-preview="{{ 1 if preview else 0 }}"
+      data-opened-url="{{ url_for('public.opened', slug=guest.slug) if not preview else '' }}"
+      data-rsvp-url="{{ url_for('public.rsvp', slug=guest.slug) if not preview else '' }}"
+      data-replied="{{ 1 if guest.responded_at else 0 }}">
+
+{% if preview %}<div class="ribbon">Preview · replies here aren't saved</div>{% endif %}
+
+<!-- ======================= ENVELOPE ======================= -->
+<section id="envelope-screen" class="envelope-screen">
+  <p class="env-kicker">You have received an invitation</p>
+  <button id="envelope" class="envelope" type="button" aria-label="Tap to open the invitation">
+    <span class="env-back"></span>
+    <span class="env-letter">
+      {% if ev.header_media_id %}<img src="{{ url_for('public.media', media_id=ev.header_media_id) }}" alt="">{% endif %}
+      <span class="env-names">{{ ev.display_names }}</span>
+      <span class="env-date">{{ ev.date_text }}</span>
+    </span>
+    <span class="env-front"></span>
+    <span class="env-flap"></span>
+    <span class="seal"><i>{{ ev.monogram }}</i></span>
+  </button>
+  <p class="env-hint">Tap the letter to open</p>
+  <p class="env-to">For <b>{{ guest.name }}</b></p>
+</section>
+
+<!-- ======================= CARD ======================= -->
+<main id="card" class="card-screen" hidden>
+  <div class="paper">
+    <header class="hero reveal">
+      {% if ev.header_media_id %}<img class="header-img" src="{{ url_for('public.media', media_id=ev.header_media_id) }}" alt="{{ ev.header_text }}">
+      {% elif ev.header_text %}<p class="header-text">{{ ev.header_text }}</p>{% endif %}
+
+      <div class="arch">
+        {% if ev.hero_media_id %}<img src="{{ url_for('public.media', media_id=ev.hero_media_id) }}" alt="{{ ev.display_names }}">
+        {% else %}<div class="arch-mono">{{ ev.monogram }}</div>{% endif %}
+      </div>
+
+      <h1 class="names">{{ ev.display_names }}</h1>
+      {% if ev.subtitle %}<p class="subtitle">{{ ev.subtitle }}</p>{% endif %}
+      {% if ev.date_text %}<p class="date-line">{{ ev.date_text }}</p>{% endif %}
+      {% if ev.venue or ev.venue_address %}
+      <div class="hero-loc">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="10" r="2.6"/></svg>
+        <div><b>{{ ev.venue }}</b>{% if ev.venue_address %}<span>{{ ev.venue_address }}</span>{% endif %}</div>
+      </div>
+      {% set hq = ((ev.venue or '') ~ (', ' if ev.venue and ev.venue_address else '') ~ (ev.venue_address or '')) | urlencode %}
+      <div class="act-row hero-acts">
+        <a class="act" href="https://www.google.com/maps/dir/?api=1&destination={{ hq }}" target="_blank" rel="noopener">Google Maps</a>
+        <a class="act" href="https://maps.apple.com/?daddr={{ hq }}" target="_blank" rel="noopener">Apple Maps</a>
+        {% if ev.venue_map_url %}<a class="act ghost" href="{{ ev.venue_map_url }}" target="_blank" rel="noopener">Pinned location</a>{% endif %}
+      </div>
+      {% endif %}
+      {% set first_fn = (functions | selectattr('starts_at') | list | first) %}
+      {% if first_fn %}
+      <div class="countdown" data-target="{{ iso_local(first_fn.starts_at) }}" aria-label="Countdown">
+        <div><b data-u="d">0</b><span>Days</span></div><div><b data-u="h">0</b><span>Hours</span></div>
+        <div><b data-u="m">0</b><span>Mins</span></div><div><b data-u="s">0</b><span>Secs</span></div>
+      </div>
+      {% endif %}
+      <div class="orn">✦</div>
+    </header>
+
+    <section class="invite-text reveal">
+      <p class="intro">{{ ev.intro_line }}</p>
+      <h2 class="guest-name">{{ guest.name }}</h2>
+      {% for p in ev.message | paragraphs %}<p>{{ p }}</p>{% endfor %}
+    </section>
+
+    {% if functions %}
+    <section class="functions reveal">
+      <div class="orn">✦</div>
+      {% for fn in functions %}
+      <article class="fn">
+        {% if fn.starts_at %}<div class="fn-leaf"><small>{{ fn.starts_at | dt('%b') }}</small><b>{{ fn.starts_at | dt('%d') }}</b><small>{{ fn.starts_at | dt('%A') }}</small></div>{% endif %}
+        <h3>{{ fn.name }}</h3>
+        {% if fn.starts_at %}<p class="fn-when">{{ fn.starts_at | tm }}{% if fn.ends_at %} – {{ fn.ends_at | tm }}{% endif %} onwards</p>{% endif %}
+        {% if fn.venue %}<p class="fn-venue">{{ fn.venue }}</p>{% endif %}
+        {% if fn.address %}<p class="fn-addr">{{ fn.address }}</p>{% endif %}
+        {% if fn.dress_code %}<p class="fn-meta">Dress code · {{ fn.dress_code }}</p>{% endif %}
+        {% if fn.notes %}<p class="fn-meta">{{ fn.notes }}</p>{% endif %}
+
+        {% set gdir = gmaps_dir(fn) %}
+        {% if gdir %}
+        <div class="act-group"><span class="act-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="10" r="2.6"/></svg> Directions</span>
+          <div class="act-row">
+            <a class="act" href="{{ gdir }}" target="_blank" rel="noopener">Google Maps</a>
+            {% if apple_maps(fn) %}<a class="act" href="{{ apple_maps(fn) }}" target="_blank" rel="noopener">Apple Maps</a>{% endif %}
+            {% if fn.map_url %}<a class="act ghost" href="{{ fn.map_url }}" target="_blank" rel="noopener">Pinned location</a>{% endif %}
+          </div></div>
+        {% endif %}
+        {% if fn.starts_at %}
+        <div class="act-group"><span class="act-title"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg> Add to calendar</span>
+          <div class="act-row">
+            <a class="act" href="{{ gcal_url(fn, ev) }}" target="_blank" rel="noopener">Android · Google</a>
+            {% if preview %}<a class="act" href="#" data-preview-only>iPhone · Apple</a>
+            {% else %}<a class="act" href="{{ url_for('public.calendar_file', slug=guest.slug, fid=fn.id) }}">iPhone · Apple</a>{% endif %}
+          </div></div>
+        {% endif %}
+      </article>
+      {% endfor %}
+      {% if functions | selectattr('starts_at') | list | length > 1 %}
+      <div class="all-cal"><span>Add every function at once</span>
+        {% if preview %}<a class="act" href="#" data-preview-only>Download .ics</a>
+        {% else %}<a class="act" href="{{ url_for('public.calendar_all', slug=guest.slug) }}">Download .ics (iPhone / Android)</a>{% endif %}
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if gallery %}
+    <section class="gallery reveal">
+      <div class="orn">✦</div>
+      <div class="gallery-track">{% for p in gallery %}<img loading="lazy" src="{{ url_for('public.media', media_id=p.id) }}" alt="">{% endfor %}</div>
+    </section>
+    {% endif %}
+
+    <!-- ======================= RSVP ======================= -->
+    <section class="rsvp reveal" id="rsvp">
+      <div class="orn">✦</div>
+      <div class="seats">
+        <div class="seats-num">{{ guest.max_guests }}</div>
+        <div class="seats-text">
+          <b>{{ 'Person' if guest.max_guests == 1 else 'People' }} invited</b>
+          <span>{{ ev.hosts or 'The family' }} {{ 'has' if not ev.hosts or ' & ' not in ev.hosts else 'have' }} invited
+            {% if guest.max_guests == 1 %}you personally{% else %}you with up to {{ guest.max_guests }} people (including you){% endif %}.</span>
+        </div>
+      </div>
+      {% if ev.rsvp_note %}{% for p in ev.rsvp_note | paragraphs %}<p class="rsvp-note">{{ p }}</p>{% endfor %}{% endif %}
+      {% if ev.rsvp_deadline %}<p class="deadline">Kindly reply by {{ ev.rsvp_deadline | dt('%d %B') }}</p>{% endif %}
+
+      {% if not ev.rsvp_open and not guest.responded_at %}
+        <p class="closed">Replies are now closed. Please contact the family directly.</p>
+      {% else %}
+      <form id="rsvp-form" {% if guest.responded_at %}hidden{% endif %} novalidate>
+        {% if functions %}
+          {% for fn in functions %}
+          <div class="rsvp-row" data-fn="{{ fn.id }}" data-max="{{ guest.max_guests }}">
+            <div class="rsvp-label"><b>{{ fn.name }}</b>{% if fn.starts_at %}<small>{{ fn.starts_at | dt('%d %b') }}</small>{% endif %}</div>
+            <div class="stepper" role="group" aria-label="Guests attending {{ fn.name }}">
+              <button type="button" class="dec" aria-label="Fewer">−</button>
+              <output>{{ rsvp_map.get(fn.id, 0) }}</output>
+              <button type="button" class="inc" aria-label="More">+</button>
+            </div>
+          </div>
+          {% endfor %}
+          <p class="rsvp-help">Use + to choose how many will attend each function (maximum {{ guest.max_guests }}). Leave 0 if you can't attend.</p>
+        {% else %}
+          <div class="rsvp-row" data-fn="count" data-max="{{ guest.max_guests }}">
+            <div class="rsvp-label"><b>Guests attending</b></div>
+            <div class="stepper"><button type="button" class="dec">−</button><output>0</output><button type="button" class="inc">+</button></div>
+          </div>
+        {% endif %}
+        <div class="wishes">
+          <label class="wish-title" for="wish-text">Send your wishes <em>optional</em></label>
+          <p class="wish-sub">Leave a dua, a blessing or a few warm words for the family — they will read it.</p>
+          <textarea id="wish-text" name="note" rows="4" maxlength="1000" placeholder="Write your wishes here…">{{ guest.note }}</textarea>
+          <div class="chips" aria-label="Quick wishes">
+            <button type="button" class="chip" data-text="Mubarak! 🤍">Mubarak! 🤍</button>
+            <button type="button" class="chip" data-text="Congratulations and best wishes! 🎉">Congratulations 🎉</button>
+            <button type="button" class="chip" data-text="Duas for a lifetime of happiness together. 🤲">Duas 🤲</button>
+            <button type="button" class="chip" data-text="Can't wait to celebrate with you! ✨">Can't wait ✨</button>
+          </div>
+          <small class="counter"><span id="wish-count">0</span>/1000</small>
+        </div>
+        <p class="form-error" id="rsvp-error" hidden></p>
+        <button class="send" type="submit">Send RSVP</button>
+      </form>
+
+      <div id="thanks" {% if not guest.responded_at %}hidden{% endif %} class="thanks">
+        <p class="shukran">Shukran</p>
+        <p>Thank you, <b>{{ guest.name }}</b>. {{ ev.thanks_text }}</p>
+        {% if ev.rsvp_open %}<button id="change-reply" class="linkbtn" type="button">Change my reply</button>{% endif %}
+      </div>
+      {% endif %}
+    </section>
+
+    <footer class="closing reveal">
+      <p class="closing-line">{{ ev.closing_line }}</p>
+      <p class="hosts">{{ ev.hosts }}</p>
+    </footer>
+  </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/invite.js') }}"></script>
+</body>
+</html>

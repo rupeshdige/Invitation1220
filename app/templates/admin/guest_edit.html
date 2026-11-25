@@ -1,0 +1,40 @@
+{% extends "admin/event_base.html" %}
+{% block title %}{{ g.name }} · {{ ev.title }}{% endblock %}
+{% block event_content %}
+<section class="panel narrow">
+  <h2>Edit guest</h2>
+  <form method="post" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="grid two">
+      <label>Name<input name="name" value="{{ g.name }}" required></label>
+      <label>WhatsApp number<input name="phone" value="{{ g.phone }}"></label>
+      <label>Email<input name="email" value="{{ g.email }}"></label>
+      <label>Group<input name="group_name" value="{{ g.group_name }}"></label>
+      <label>Persons invited <span class="muted small">(shown on their card)</span><input type="number" min="1" max="20" name="max_guests" value="{{ g.max_guests }}"></label>
+      <label class="span2">Private note (only you see)<input name="admin_note" value="{{ g.admin_note }}"></label>
+    </div>
+    <label>Personal link
+      <div class="row gap"><input readonly value="{{ link }}" id="link-field"><button type="button" class="btn ghost" data-copy="{{ link }}">Copy</button></div></label>
+    <div class="row gap"><button class="btn primary" type="submit">Save</button>
+      <a class="btn ghost" href="{{ url_for('admin.event_guests', event_id=ev.id) }}">Back</a></div>
+  </form>
+
+  <hr>
+  <h3>Reply details</h3>
+  {% if g.responded_at %}
+    <p>{{ g.response | capitalize }} · {{ g.party_size }} people · {{ g.responded_at | localtime }}</p>
+    <ul>{% for fn in ev.functions %}<li>{{ fn.name }}: <b>{{ g.rsvp_map.get(fn.id, 0) or 'Not attending' }}</b></li>{% endfor %}</ul>
+    {% if g.note %}<p class="note">“{{ g.note }}”</p>{% endif %}
+  {% else %}<p class="muted">No reply yet.</p>{% endif %}
+  <div class="row gap wrap">
+    {% for action, label, cls in [('sent','Mark as sent','ghost'),('unsent','Mark not sent','ghost'),('reset','Reset reply','ghost'),('delete','Delete guest','danger')] %}
+    <form method="post" action="{{ url_for('admin.guest_action', event_id=ev.id, gid=g.id) }}" {% if action in ('delete','reset') %}data-confirm="{{ label }}?"{% endif %}>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="{{ action }}">
+      <input type="hidden" name="back" value="{{ url_for('admin.guest_edit', event_id=ev.id, gid=g.id) if action != 'delete' else url_for('admin.event_guests', event_id=ev.id) }}">
+      <button class="btn small {{ cls }}" type="submit">{{ label }}</button>
+    </form>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
