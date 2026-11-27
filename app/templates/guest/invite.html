@@ -147,8 +147,7 @@
         <div class="seats-num">{{ guest.max_guests }}</div>
         <div class="seats-text">
           <b>{{ 'Person' if guest.max_guests == 1 else 'People' }} invited</b>
-          <span>{{ ev.hosts or 'The family' }} {{ 'has' if not ev.hosts or ' & ' not in ev.hosts else 'have' }} invited
-            {% if guest.max_guests == 1 %}you personally{% else %}you with up to {{ guest.max_guests }} people (including you){% endif %}.</span>
+          <span>{{ ev.hosts or 'The family' }} aapne ma'al ikraam izan araz kare che!</span>
         </div>
       </div>
       {% if ev.rsvp_note %}{% for p in ev.rsvp_note | paragraphs %}<p class="rsvp-note">{{ p }}</p>{% endfor %}{% endif %}
